@@ -25,12 +25,12 @@ applied **only at test time**?
 | `configs/default.yaml`, `src/config.py` | ✅ implemented | shared |
 | `src/dataset.py` (loader, layout detection, frozen split) | ✅ implemented | shared |
 | `src/metrics.py`, `src/inference.py`, `src/evaluate.py` | ✅ implemented | shared |
-| `src/baseline.py` (features + logistic regression) | 🟡 TODO stub | _TBD_ |
-| `src/corrupt.py` (jpeg / blur / resample) | 🟡 TODO stub | _TBD_ |
-| `src/model.py` (SmallCNN, FrozenResNet18) | 🟡 TODO stub | _TBD_ |
-| `src/train.py` (training loop) | 🟡 TODO stub | _TBD_ |
+| `src/baseline.py` (features + logistic regression) | 🟡 TODO stub | Andrew York |
+| `src/corrupt.py` (jpeg / blur / resample) | 🟡 TODO stub | Angelette Munoz |
+| `src/model.py` (SmallCNN, FrozenResNet18) | 🟡 TODO stub | Angelette Munoz |
+| `src/train.py` (training loop) | 🟡 TODO stub | Angelette Munoz |
 | `src/failure_cases.py` (qualitative analysis) | 🟡 TODO stub | _TBD_ |
-| `notebooks/01_explore.ipynb` (stats, grid, leakage checks) | 🟡 TODO stub | _TBD_ |
+| `notebooks/01_explore.ipynb` (stats, grid, leakage checks) | 🟡 TODO stub | Andrew York |
 
 Stubs raise `NotImplementedError`. Their docstrings state only the requirements from the project spec,
 with no implementation hints. `tests/` holds acceptance tests for the stubs that **skip** until a stub is
