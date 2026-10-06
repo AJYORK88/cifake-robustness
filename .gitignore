@@ -23,3 +23,8 @@ wandb/
 Thumbs.db
 .vscode/
 .idea/
+
+# Credentials (normally live in ~/.kaggle, never in the repo)
+kaggle.json
+access_token*
+.env

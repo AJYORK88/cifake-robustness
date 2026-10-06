@@ -62,8 +62,12 @@ macOS/Linux: `source .venv/bin/activate` instead of `Activate.ps1`.
 
 ### Download (Kaggle CLI)
 
-1. Kaggle → Settings → API → *Create New Token*. Put `kaggle.json` in `%USERPROFILE%\.kaggle\` (Windows)
-   or `~/.kaggle/` (macOS/Linux). Never commit it.
+1. Kaggle → Settings → API → *Generate New Token*, and copy the token string. Save it, with nothing else in the file,
+   as `%USERPROFILE%\.kaggle\access_token` (Windows; `access_token.txt` also works) or `~/.kaggle/access_token`
+   (macOS/Linux). Create the `.kaggle` folder if it doesn't exist:
+   `New-Item -ItemType Directory -Force "$env:USERPROFILE\.kaggle"`, then `notepad "$env:USERPROFILE\.kaggle\access_token.txt"`.
+   Alternatively, set the `KAGGLE_API_TOKEN` environment variable. A legacy `kaggle.json` also still works. Never commit the token.
+   Test it with: `kaggle datasets files birdy654/cifake-real-and-ai-generated-synthetic-images`
 2. Download and unzip:
 
 ```powershell
