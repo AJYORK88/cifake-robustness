@@ -32,8 +32,9 @@ applied **only at test time**?
 | `src/failure_cases.py` (qualitative analysis) | 🟡 TODO stub | _TBD_ |
 | `notebooks/01_explore.ipynb` (stats, grid, leakage checks) | 🟡 TODO stub | _TBD_ |
 
-Stubs raise `NotImplementedError` and include docstrings with the expected behavior and known gotchas.
-`tests/` holds acceptance tests for the stubs that **skip** until a stub is implemented, then enforce it.
+Stubs raise `NotImplementedError`. Their docstrings state only the requirements from the project spec,
+with no implementation hints. `tests/` holds acceptance tests for the stubs that **skip** until a stub is
+implemented, then enforce it.
 See [AI_USAGE.md](AI_USAGE.md) for which code was AI-assisted (required by guidelines §6).
 
 ---

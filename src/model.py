@@ -1,7 +1,4 @@
-"""Models. Both output ONE LOGIT per image (shape (N,)); apply torch.sigmoid only at inference.
-
-Pair with nn.BCEWithLogitsLoss in training -- it is the numerically stable form of
-"sigmoid head + binary cross-entropy".
+"""Models. Both output ONE LOGIT per image, shape (N,). They are trained with BCEWithLogitsLoss.
 
 STATUS: build_model() is implemented (shared plumbing used by train.py / evaluate.py).
         SmallCNN and FrozenResNet18 are TODO for the team.
@@ -14,52 +11,40 @@ from torch import nn
 
 
 class SmallCNN(nn.Module):
-    """Three conv blocks -> global average pool -> dropout -> linear logit.
+    """Small CNN trained from scratch.
 
-    Each block: Conv2d(3x3, padding=1) -> BatchNorm2d -> ReLU -> MaxPool2d(2).
-    Channels from config: [32, 64, 128]  => spatial 32 -> 16 -> 8 -> 4.
-    Head: AdaptiveAvgPool2d(1) -> flatten -> Dropout(p) -> Linear(128, 1).
-
-    TODO(team): implement __init__ and forward. forward must return shape (N,), e.g. .squeeze(1).
-    Report the parameter count: sum(p.numel() for p in model.parameters()).
+    Requirements (from the project spec):
+      - Three conv blocks with 3x3 kernels, ReLU, batch norm, and max-pooling.
+      - Channel widths from the config: [32, 64, 128].
+      - Then global average pooling, dropout (p from config), and a linear head to one logit.
+      - Input (N, 3, 32, 32) floats in [0, 1]. Output (N,) logits.
     """
 
     def __init__(self, channels: list[int] = (32, 64, 128), kernel_size: int = 3, dropout: float = 0.3):
         super().__init__()
         raise NotImplementedError("SmallCNN.__init__")
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # x: (N, 3, 32, 32) in [0, 1]
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError("SmallCNN.forward")
 
 
 class FrozenResNet18(nn.Module):
-    """ImageNet ResNet18 as a frozen feature extractor + a trainable linear head.
+    """ImageNet-pretrained ResNet18 used as a fixed feature extractor.
 
-    TODO(team): implement. Gotchas that will silently wreck results if missed:
-      1. Weights: torchvision.models.resnet18(weights=ResNet18_Weights[cfg weights]).
-         First run downloads ~45 MB from download.pytorch.org into the torch cache.
-      2. Upsample 32 -> 224 INSIDE forward (F.interpolate, bilinear, align_corners=False).
-         The dataset stays 32x32 for every model.
-      3. Normalize with ImageNet mean/std INSIDE forward, after upsampling. Inputs are [0, 1];
-         the pretrained backbone expects mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225].
-         Register them as buffers so .to(device) moves them.
-      4. Freeze: requires_grad=False on every backbone param; replace backbone.fc with
-         nn.Identity() and put a separate nn.Linear(512, 1) head on top.
-      5. BatchNorm: requires_grad=False does NOT stop BN running stats from updating in train mode.
-         Override train() so the backbone always stays in eval():
-             def train(self, mode=True):
-                 super().train(mode); self.backbone.eval(); return self
-      6. Only pass self.head.parameters() to the optimizer.
-      7. CPU cost: 224px forward passes over 90k images x 15 epochs is slow. Because the backbone
-         is frozen, consider caching its 512-d features once (train/val) and training the head
-         on the cache. Document whichever you do.
+    Requirements (from the project spec):
+      - Load torchvision ResNet18 with ImageNet weights (weight name from the config).
+      - The backbone is frozen and must not change during training.
+      - Replace the classification head with a linear layer producing one logit.
+      - Accept the same (N, 3, 32, 32) inputs in [0, 1] as SmallCNN. Any resizing to the
+        backbone's input size (config: 224) happens inside this class only.
+      - Output (N,) logits.
     """
 
     def __init__(self, weights: str = "IMAGENET1K_V1", input_size: int = 224, freeze_backbone: bool = True):
         super().__init__()
         raise NotImplementedError("FrozenResNet18.__init__")
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:  # x: (N, 3, 32, 32) in [0, 1]
+    def forward(self, x: torch.Tensor) -> torch.Tensor:
         raise NotImplementedError("FrozenResNet18.forward")
 
 

@@ -1,14 +1,20 @@
-"""Train a model on data/splits/train.txt, early-stopping on validation ROC-AUC.
+"""Train a model on data/splits/train.txt.
 
     python -m src.train                      # SmallCNN, configs/default.yaml
     python -m src.train --model resnet18
 
-Outputs (in results/):
-    <model>_best.pt          best-val-AUC checkpoint, format defined in src/inference.py (gitignored)
-    <model>_config.yaml      exact config used for the run (commit this)
-    <model>_history.json     per-epoch log (commit this)
+Requirements (from the project spec):
+  - Adam, binary cross-entropy, and batch size / epochs / lr from the config. Fixed seed.
+  - After each epoch, compute validation ROC-AUC. Early stopping on val AUC, using the patience in the config.
+  - Save the best checkpoint to results/<model>_best.pt, in the format documented in src/inference.py
+    (evaluate.py depends on that format).
+  - Log the train loss and val AUC for every epoch to results/<model>_history.json.
+  - Never use the test split. Never apply corruptions to training data.
 
-STATUS: CLI, config, seeding, and device setup are implemented. The training loop is TODO.
+Shared helpers you can use: src.dataset.build_loader, src.model.build_model,
+src.inference.predict_scores / save_checkpoint, src.metrics.compute_metrics / save_json.
+
+STATUS: CLI, config, seeding, and device setup are implemented. Training is TODO for the team.
 """
 
 from __future__ import annotations
@@ -39,31 +45,7 @@ def main() -> None:
         yaml.safe_dump(cfg, f, sort_keys=False)
     print(f"[train model={model_name}] device={device} seed={cfg['seed']}")
 
-    # TODO(team): implement the training loop. Suggested shape:
-    #
-    #   from src.dataset import build_loader
-    #   from src.model import build_model
-    #   from src.inference import predict_scores, save_checkpoint
-    #   from src.metrics import compute_metrics, save_json
-    #
-    #   train_loader = build_loader(cfg, "train")                  # shuffled, seeded, NO corruption
-    #   val_loader   = build_loader(cfg, "val", shuffle=False)
-    #   model = build_model(model_name, cfg).to(device)
-    #   params = [p for p in model.parameters() if p.requires_grad]   # head-only for resnet18
-    #   optimizer = torch.optim.Adam(params, lr=cfg["train"]["lr"])
-    #   loss_fn = torch.nn.BCEWithLogitsLoss()                    # labels must be float: y.float()
-    #
-    #   for epoch in 1..epochs:
-    #       model.train(); accumulate mean train loss
-    #       y, s = predict_scores(model, val_loader, device)      # scores = P(FAKE)
-    #       val = compute_metrics(y, s, cfg["eval"]["threshold"])
-    #       history.append({"epoch", "train_loss", "val_auc", "val_accuracy", "seconds"})
-    #       if val AUC improved: save_checkpoint(results_dir / f"{model_name}_best.pt", ...); reset patience
-    #       else: patience += 1; stop when patience == cfg["train"]["early_stopping"]["patience"]
-    #       save_json(history, results_dir / f"{model_name}_history.json")   # every epoch, survives crashes
-    #
-    # Never touch the test split here.
-    raise NotImplementedError("Training loop is TODO -- see comments in src/train.py")
+    raise NotImplementedError("train.main: training loop")
 
 
 if __name__ == "__main__":
