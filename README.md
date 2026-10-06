@@ -57,7 +57,8 @@ macOS/Linux: `source .venv/bin/activate` instead of `Activate.ps1`.
 - Source: <https://www.kaggle.com/datasets/birdy654/cifake-real-and-ai-generated-synthetic-images>
 - 120,000 images, 32×32 RGB, balanced. Official release: **100,000 train** (50k REAL / 50k FAKE) and
   **20,000 test** (10k / 10k). REAL = CIFAR-10; FAKE = Stable Diffusion v1.4 generations mirroring CIFAR-10 classes.
-- License: check the Kaggle dataset page and record it in the report (our proposal lists MIT, the same terms as CIFAR-10).
+- License: the Kaggle API reports it as **"other"**, not MIT. Read the license text on the dataset page and quote
+  it accurately in the report (the original Grok spec said "MIT, same terms as CIFAR-10"; that has not been verified).
 - Images and checkpoints are **never committed** (see `.gitignore`). Only the split lists in `data/splits/` are.
 
 ### Download (Kaggle CLI)
