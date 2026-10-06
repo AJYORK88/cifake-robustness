@@ -52,6 +52,38 @@ python -m pytest                      # plumbing tests pass; stub tests show as 
 
 macOS/Linux: `source .venv/bin/activate` instead of `Activate.ps1`.
 
+## Partner setup (joining an existing clone)
+
+The split is already created and committed. **Do not run `--make-split`**; use the one in the repo.
+
+```powershell
+cd C:\dev                              # anywhere OUTSIDE OneDrive/Dropbox
+git clone https://github.com/AJYORK88/cifake-robustness.git
+cd cifake-robustness
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+```
+
+Get the dataset zip in **one** of these ways and save it as `data\cifake.zip`:
+- Ask your teammate for their `cifake.zip` (104.5 MB). This needs no Kaggle account.
+- Kaggle website: log in, click **Download** on the [dataset page](https://www.kaggle.com/datasets/birdy654/cifake-real-and-ai-generated-synthetic-images), and rename the file to `cifake.zip`.
+- Kaggle CLI with your own token (see *Download* below). Never share tokens.
+
+```powershell
+New-Item -ItemType Directory -Force data\raw
+tar -xf data\cifake.zip -C data\raw    # ~2 min
+python -m src.dataset --check          # expect 50000 / 50000 / 10000 / 10000, no warnings
+python -m pytest                       # all pass or skip
+git status                             # must show NO changes to data/splits/
+```
+
+**Working together:**
+- Run `git pull` before starting work.
+- Work on the stubs you own (see **Status**), and commit at least weekly. Bonus #1 requires a substantive commit from *each* member every week.
+- Log any AI assistance in [AI_USAGE.md](AI_USAGE.md).
+- Never commit images, zips, checkpoints, or tokens. `.gitignore` already blocks them.
+
 ## Data: CIFAKE
 
 - Source: <https://www.kaggle.com/datasets/birdy654/cifake-real-and-ai-generated-synthetic-images>
