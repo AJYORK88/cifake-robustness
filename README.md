@@ -1,6 +1,6 @@
 # Robust Detection of Diffusion-Generated Images under Common Corruptions
 
-TCU COSC 50523 Deep Learning, Fall 2026 · Path A (Applied Deep Learning) · Team of two
+TCU COSC 50523 Deep Learning, Fall 2026 · Path A (Applied Deep Learning) · Team: Andrew York & Angelette Munoz
 
 **Question.** Can a small CNN separate real CIFAR-10 photos from Stable Diffusion v1.4 fakes on the
 official CIFAKE split, and how much of that accuracy survives JPEG compression, blur, and resampling
