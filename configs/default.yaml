@@ -1,0 +1,55 @@
+# Default experiment configuration. Every script reads this file (--config).
+# Copy it (e.g. configs/resnet18.yaml) for a new experiment instead of editing
+# values in code, so every reported result traces back to a config file.
+#
+# YAML gotcha: write floats with a dot (1.0e-3). PyYAML parses "1e-3" as a STRING.
+
+seed: 42
+
+data:
+  raw_dir: data/raw            # contains train/{REAL,FAKE} and test/{REAL,FAKE}
+  splits_dir: data/splits      # train.txt / val.txt (committed, shared by both partners)
+  image_size: 32
+  val_per_class: 5000          # 5,000 REAL + 5,000 FAKE held out from the official train pool
+  num_workers: 0               # 0 is safest on Windows; raise on Linux/macOS
+  labels: {REAL: 0, FAKE: 1}
+
+train:
+  model: smallcnn              # smallcnn | resnet18 (overridable with --model)
+  batch_size: 128
+  epochs: 15
+  lr: 1.0e-3
+  optimizer: adam
+  loss: bce_with_logits        # binary cross-entropy on logits (sigmoid applied only at inference)
+  early_stopping:
+    metric: val_auc
+    patience: 3
+
+model:
+  smallcnn:
+    channels: [32, 64, 128]
+    kernel_size: 3
+    dropout: 0.3
+  resnet18:
+    weights: IMAGENET1K_V1     # torchvision ResNet18_Weights enum name
+    input_size: 224            # 32x32 is upsampled to this INSIDE the model only
+    freeze_backbone: true
+
+eval:
+  threshold: 0.5               # score >= threshold -> FAKE. Shared by baseline and CNNs.
+
+# Test-time-only corruptions. Never apply these to training data.
+corruptions:
+  jpeg40:   {type: jpeg, quality: 40}
+  jpeg70:   {type: jpeg, quality: 70}
+  blur:     {type: gaussian_blur, sigma: 1.0}
+  resample: {type: downsample_upsample, factor: 2, interpolation: bilinear}
+
+baseline:
+  color_bins: 32               # per RGB channel
+  lbp: {points: 8, radius: 1, method: uniform}
+  highfreq: {method: fft, cutoff: 0.5}   # fraction of max radial frequency treated as "high"
+  logreg: {max_iter: 2000, C: 1.0}
+
+output:
+  results_dir: results

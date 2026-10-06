@@ -1,0 +1,3 @@
+# Keep LF everywhere so data/splits/*.txt are byte-identical for both partners on any OS
+* text=auto eol=lf
+*.ipynb text eol=lf

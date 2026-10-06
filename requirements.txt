@@ -1,0 +1,17 @@
+# Tested on Python 3.14.0, Windows 11, CPU. Pinned for reproducibility.
+# CPU wheels come from PyPI. For CUDA, install torch/torchvision per https://pytorch.org/get-started/locally/
+# first, then run pip install -r requirements.txt.
+torch==2.14.1
+torchvision==0.29.1
+scikit-learn==1.9.1
+scikit-image==0.26.0
+numpy==2.5.3
+pillow==12.3.0
+pyyaml==6.0.3
+tqdm==4.70.1
+matplotlib==3.11.2
+
+# Tooling
+kaggle==2.2.4        # dataset download CLI
+pytest==9.1.1
+ipykernel==7.4.0     # run notebooks/ in VS Code or Jupyter
