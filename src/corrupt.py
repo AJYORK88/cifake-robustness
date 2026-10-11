@@ -48,3 +48,7 @@ def get_corruption(name: str, cfg: dict) -> Callable[[Image.Image], Image.Image]
         raise ValueError(f"Unknown corruption {name!r}; choose from {corruption_names(cfg)}") from None
     fn = _FUNCTIONS[spec.pop("type")]
     return partial(fn, **spec)
+
+
+
+I will work on this tonight. uploading to show commit for the week
