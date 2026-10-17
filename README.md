@@ -125,7 +125,12 @@ python -m src.dataset --make-split
 - The **official test set is frozen.** It is used only by `src/evaluate.py --split test`, once, after
   model selection. Each test run is logged to `results/test_runs.log`.
 - Validation is a stratified holdout from the **official train pool only**: 5,000 REAL and 5,000 FAKE, seed 42.
-- `data/splits/train.txt` (90,000 paths) and `data/splits/val.txt` (10,000 paths) are committed, so both
+- **Duplicate removal.** CIFAKE contains 1,336 pairs of byte-identical FAKE images stored under different names.
+  544 of these pairs span splits (train+test 347, train+val 166, val+test 31). The 513 training copies whose
+  twin is in val or test are removed, so no held-out image is ever trained on. They are listed in
+  `data/splits/removed_duplicates.txt`. Train: 45,000 REAL / 44,487 FAKE. Val and the official test set are unchanged.
+  The 31 val+test pairs remain; neither split is trained on.
+- `data/splits/train.txt` (89,487 paths) and `data/splits/val.txt` (10,000 paths) are committed, so both
   partners use byte-identical splits. Paths are relative, use `/`, and are sorted before the seeded shuffle,
   so the split does not depend on OS or directory-listing order. The script refuses to overwrite an existing split without `--force`.
 - Corruptions are **test-time only**. `build_dataset` refuses to corrupt the training split.

@@ -7,6 +7,10 @@ RELATIVE to data/raw and using forward slashes, so both partners get byte-identi
 files regardless of OS or where the repo is cloned. Lists are sorted before the
 seeded shuffle because directory listing order differs across filesystems.
 
+CIFAKE contains byte-identical images stored under different names, some of them across the
+official train/test folders. Train images identical to any val or test image are removed
+(data/splits/removed_duplicates.txt) so no held-out image is ever trained on.
+
 CLI:
     python -m src.dataset --check          # show detected folder layout and counts
     python -m src.dataset --make-split     # write data/splits/{train,val}.txt (refuses to overwrite)
@@ -15,6 +19,7 @@ CLI:
 from __future__ import annotations
 
 import argparse
+import hashlib
 import random
 from pathlib import Path
 from typing import Callable
@@ -91,8 +96,30 @@ def list_images(raw_dir: Path, pool: str) -> list[str]:
 
 
 # ---------------------------------------------------------------- split
-def make_split(raw_dir: Path, val_per_class: int, seed: int) -> tuple[list[str], list[str]]:
-    """Stratified holdout from the official TRAIN pool only. Returns (train, val), both sorted."""
+def file_digest(path: Path) -> str:
+    """MD5 of the file's bytes. Identical digests = byte-identical image files."""
+    return hashlib.md5(Path(path).read_bytes()).hexdigest()
+
+
+def eval_duplicates_in_train(raw_dir: Path, train: list[str], held_out: list[str]) -> set[str]:
+    """Train paths whose exact file content also appears in a held-out (val or test) path.
+
+    CIFAKE ships some byte-identical images under different names, including across the
+    official train/test folders. Training on such a copy leaks the held-out image into training.
+    """
+    raw_dir = Path(raw_dir)
+    held_out_digests = {file_digest(raw_dir / p) for p in held_out}
+    return {p for p in train if file_digest(raw_dir / p) in held_out_digests}
+
+
+def make_split(raw_dir: Path, val_per_class: int, seed: int,
+               drop_eval_duplicates: bool = True) -> tuple[list[str], list[str], list[str]]:
+    """Stratified holdout from the official TRAIN pool only. Returns (train, val, removed), sorted.
+
+    The validation draw depends only on (seed, val_per_class), never on deduplication, so val
+    is identical either way. With drop_eval_duplicates, train images byte-identical to any val
+    or official-test image are then removed from train and returned as `removed`.
+    """
     train_pool = list_images(raw_dir, "train")
     rng = random.Random(seed)
     train, val = [], []
@@ -103,7 +130,11 @@ def make_split(raw_dir: Path, val_per_class: int, seed: int) -> tuple[list[str],
         rng.shuffle(cls_paths)
         val.extend(cls_paths[:val_per_class])
         train.extend(cls_paths[val_per_class:])
-    return sorted(train), sorted(val)
+    removed: set[str] = set()
+    if drop_eval_duplicates:
+        removed = eval_duplicates_in_train(raw_dir, train, val + list_images(raw_dir, "test"))
+        train = [p for p in train if p not in removed]
+    return sorted(train), sorted(val), sorted(removed)
 
 
 def write_split(paths: list[str], path: Path) -> None:
@@ -200,12 +231,20 @@ def main() -> None:
         if (out / "val.txt").exists() and not args.force:
             raise SystemExit(f"{out / 'val.txt'} already exists. The split is frozen and shared; "
                              "use --force only if you both agree to regenerate it.")
-        train, val = make_split(repo_path(cfg["data"]["raw_dir"]), cfg["data"]["val_per_class"], cfg["seed"])
+        dedupe = cfg["data"].get("drop_eval_duplicates", True)
+        if dedupe:
+            print("Hashing images to find train copies of val/test images (1-6 min)...")
+        train, val, removed = make_split(repo_path(cfg["data"]["raw_dir"]), cfg["data"]["val_per_class"],
+                                         cfg["seed"], drop_eval_duplicates=dedupe)
         write_split(train, out / "train.txt")
         write_split(val, out / "val.txt")
+        write_split(removed, out / "removed_duplicates.txt")
         n_val_fake = sum(label_from_path(p) for p in val)
-        print(f"Wrote {len(train)} train / {len(val)} val paths "
-              f"(val: {len(val) - n_val_fake} REAL, {n_val_fake} FAKE, seed={cfg['seed']}) to {out}")
+        n_train_fake = sum(label_from_path(p) for p in train)
+        print(f"Wrote {len(train)} train ({len(train) - n_train_fake} REAL, {n_train_fake} FAKE) / "
+              f"{len(val)} val ({len(val) - n_val_fake} REAL, {n_val_fake} FAKE) paths, seed={cfg['seed']}, to {out}")
+        print(f"Removed {len(removed)} train images byte-identical to a val/test image "
+              f"(listed in {out / 'removed_duplicates.txt'})")
 
 
 if __name__ == "__main__":

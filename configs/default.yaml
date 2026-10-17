@@ -11,6 +11,7 @@ data:
   splits_dir: data/splits      # train.txt / val.txt (committed, shared by both partners)
   image_size: 32
   val_per_class: 5000          # 5,000 REAL + 5,000 FAKE held out from the official train pool
+  drop_eval_duplicates: true   # drop train images byte-identical to a val/test image (CIFAKE has some)
   num_workers: 0               # 0 is safest on Windows; raise on Linux/macOS
   labels: {REAL: 0, FAKE: 1}
 
