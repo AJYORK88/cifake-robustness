@@ -11,6 +11,8 @@ Confirm that this usage is allowed under the course syllabus.
 | 2026-10-06 | Grok (xAI) | none | Drafted the project scaffold specification (repo layout, split protocol, hyper-parameters, file list). |
 | 2026-10-06 | Claude Code (Anthropic) | `configs/default.yaml`, `src/config.py`, `src/dataset.py`, `src/metrics.py`, `src/inference.py`, `src/evaluate.py`, `tests/*`, `README.md`, `.gitignore`, `.gitattributes`, `requirements.txt`, `pyproject.toml` | Wrote the shared infrastructure (config, frozen split, data loading, metrics, checkpoint format, evaluation CLI) and the tests. Generated the train/val split by running `src.dataset --make-split`. |
 | 2026-10-06 | Claude Code (Anthropic) | `src/baseline.py`, `src/corrupt.py`, `src/model.py`, `src/train.py`, `src/failure_cases.py`, `notebooks/01_explore.ipynb` | Created **empty stubs only**: function signatures and requirements copied from the project spec, with no implementation hints. AI-written plumbing inside these files: `corruption_names` / `get_corruption` (corrupt.py), `build_model` (model.py), the argument-parsing/config/seed setup in `train.py` and `baseline.py`, and the notebook's setup cell. Everything marked `TODO(team)` is written by the team. |
+| 2026-10-20 | GitHub Copilot | `src/train.py`, `src/model.py` | Used GitHub Copilot to help debug Python indentation and dataset path errors. Reviewed and tested the generated code locally.|
+| 2026-10-20 | GitHub Copilot |  `src/model.py` | Used GitHub Copilot to implement the 'SmallCNN' architecture in 'src/model.py' |
 
 ## Ideas
 
