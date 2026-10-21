@@ -20,11 +20,45 @@ class SmallCNN(nn.Module):
       - Input (N, 3, 32, 32) floats in [0, 1]. Output (N,) logits.
     """
 
-    def __init__(self, channels: list[int] = (32, 64, 128), kernel_size: int = 3, dropout: float = 0.3):
+    def __init__(
+        self,
+        channels: list[int] = (32, 64, 128),
+        kernel_size: int = 3,
+        dropout: float = 0.3,
+    ):
         super().__init__()
-        raise NotImplementedError("SmallCNN.__init__")
+
+        blocks: list[nn.Module] = []
+        in_channels = 3
+
+        for out_channels in channels:
+            blocks.extend(
+                [
+                    nn.Conv2d(
+                        in_channels,
+                        out_channels,
+                        kernel_size=kernel_size,
+                        padding=kernel_size // 2,
+                    ),
+                    nn.BatchNorm2d(out_channels),
+                    nn.ReLU(inplace=True),
+                    nn.MaxPool2d(kernel_size=2),
+                ]
+            )
+            in_channels = out_channels
+
+        self.features = nn.Sequential(*blocks)
+        self.global_pool = nn.AdaptiveAvgPool2d((1, 1))
+        self.dropout = nn.Dropout(p=dropout)
+        self.classifier = nn.Linear(in_channels, 1)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
+        x = self.features(x)
+        x = self.global_pool(x)
+        x = torch.flatten(x, start_dim=1)
+        x = self.dropout(x)
+        x = self.classifier(x)
+        return x.squeeze(1)
         raise NotImplementedError("SmallCNN.forward")
 
 

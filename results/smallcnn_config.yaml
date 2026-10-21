@@ -1,0 +1,63 @@
+seed: 42
+data:
+  raw_dir: data/raw
+  splits_dir: data/splits
+  image_size: 32
+  val_per_class: 5000
+  drop_eval_duplicates: true
+  num_workers: 0
+  labels:
+    REAL: 0
+    FAKE: 1
+train:
+  model: smallcnn
+  batch_size: 128
+  epochs: 15
+  lr: 0.001
+  optimizer: adam
+  loss: bce_with_logits
+  early_stopping:
+    metric: val_auc
+    patience: 3
+model:
+  smallcnn:
+    channels:
+    - 32
+    - 64
+    - 128
+    kernel_size: 3
+    dropout: 0.3
+  resnet18:
+    weights: IMAGENET1K_V1
+    input_size: 224
+    freeze_backbone: true
+eval:
+  threshold: 0.5
+corruptions:
+  jpeg40:
+    type: jpeg
+    quality: 40
+  jpeg70:
+    type: jpeg
+    quality: 70
+  blur:
+    type: gaussian_blur
+    sigma: 1.0
+  resample:
+    type: downsample_upsample
+    factor: 2
+    interpolation: bilinear
+baseline:
+  color_bins: 32
+  lbp:
+    points: 8
+    radius: 1
+    method: uniform
+  highfreq:
+    method: fft
+    cutoff: 0.5
+  logreg:
+    max_iter: 2000
+    C: 1.0
+output:
+  results_dir: results
