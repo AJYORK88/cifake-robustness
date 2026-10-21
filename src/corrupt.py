@@ -50,5 +50,3 @@ def get_corruption(name: str, cfg: dict) -> Callable[[Image.Image], Image.Image]
     return partial(fn, **spec)
 
 
-
-I will work on this tonight. uploading to show commit for the week
