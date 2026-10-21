@@ -14,16 +14,18 @@ Requirements (from the project spec):
 Shared helpers you can use: src.dataset.build_loader, src.model.build_model,
 src.inference.predict_scores / save_checkpoint, src.metrics.compute_metrics / save_json.
 
-STATUS: CLI, config, seeding, and device setup are implemented. Training is TODO for the team.
+STATUS: implemented.
 """
 
 from __future__ import annotations
 
 import argparse
+import time
 
 import torch
 import yaml
 from torch import nn
+from tqdm import tqdm
 
 from src.config import get_device, load_config, repo_path, set_seed
 from src.dataset import build_loader
@@ -98,8 +100,9 @@ def main() -> None:
 
         total_loss = 0.0
         total_examples = 0
+        epoch_start = time.time()
 
-        for x, y in train_loader:
+        for x, y in tqdm(train_loader, desc=f"train epoch {epoch}/{max_epochs}", leave=False):
             x = x.to(device)
             y = y.to(device).float()
 
@@ -123,7 +126,7 @@ def main() -> None:
             device,
             desc=f"val epoch {epoch}",
         )
-        val_metrics = compute_metrics(y_true, y_score)
+        val_metrics = compute_metrics(y_true, y_score, cfg["eval"]["threshold"])
         val_auc = float(val_metrics["roc_auc"])
 
         history["epochs"].append(
@@ -131,6 +134,8 @@ def main() -> None:
                 "epoch": epoch,
                 "train_loss": float(train_loss),
                 "val_auc": val_auc,
+                "val_accuracy": float(val_metrics["accuracy"]),
+                "seconds": round(time.time() - epoch_start, 1),
             }
         )
         save_json(history, history_path)
@@ -138,7 +143,8 @@ def main() -> None:
         print(
             f"[epoch {epoch:02d}/{max_epochs}] "
             f"train_loss={train_loss:.6f} "
-            f"val_auc={val_auc:.6f}"
+            f"val_auc={val_auc:.6f} "
+            f"({time.time() - epoch_start:.0f}s)"
         )
 
         if val_auc > best_val_auc:

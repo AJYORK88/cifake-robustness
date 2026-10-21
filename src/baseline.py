@@ -24,7 +24,7 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
 from src.config import load_config, repo_path, set_seed
-from src.dataset import label_from_path, split_paths
+from src.dataset import data_root, label_from_path, split_paths
 from src.metrics import compute_metrics, format_metrics, save_json
 
 
@@ -61,7 +61,7 @@ def highfreq_energy(img: np.ndarray, cutoff: float) -> np.ndarray:
 
 def build_feature_matrix(cfg: dict, split: str) -> tuple[np.ndarray, np.ndarray]:
     """Return (X, y) for the given split: one feature row and one label per image."""
-    raw_dir = repo_path(cfg["data"]["raw_dir"])
+    raw_dir = data_root(repo_path(cfg["data"]["raw_dir"]))
     b = cfg["baseline"]
     rows, labels = [], []
     for rel in tqdm(split_paths(cfg, split), desc=f"features [{split}]"):

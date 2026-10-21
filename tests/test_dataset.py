@@ -34,7 +34,26 @@ def test_layout_detection_handles_nested_and_case(tmp_path, fake_raw):
     (nested / "cifake" / "train" / "REAL").rename(nested / "cifake" / "train" / "real")
     dirs = find_class_dirs(nested)
     assert dirs[("train", "REAL")].name == "real"
-    assert make_split(nested, 5, 42)[1][0].startswith("cifake/train/")
+    # Split paths are relative to the folder holding train/ and test/, so a nested unzip
+    # produces the same split files as a flat one.
+    assert make_split(nested, 5, 42)[1] == [p.replace("/REAL/", "/real/") for p in make_split(fake_raw, 5, 42)[1]]
+
+
+def test_split_files_from_flat_unzip_load_from_nested_unzip(cfg, tmp_path):
+    train, val, _ = make_split(cfg["data"]["raw_dir"], 5, 42)
+    write_split(train, Path(cfg["data"]["splits_dir"]) / "train.txt")
+    write_split(val, Path(cfg["data"]["splits_dir"]) / "val.txt")
+    nested = tmp_path / "raw_nested"
+    shutil.copytree(cfg["data"]["raw_dir"], nested / "archive")      # e.g. Windows "Extract All"
+    cfg["data"]["raw_dir"] = str(nested)
+    x, _ = build_dataset(cfg, "val")[0]
+    assert x.shape == (3, 32, 32)
+
+
+def test_missing_images_fail_fast_with_a_clear_message(cfg):
+    write_split(["train/REAL/not-there.jpg"], Path(cfg["data"]["splits_dir"]) / "val.txt")
+    with pytest.raises(FileNotFoundError, match="src.dataset --check"):
+        build_dataset(cfg, "val")
 
 
 def test_dataset_returns_unit_range_tensors(cfg):

@@ -59,7 +59,6 @@ class SmallCNN(nn.Module):
         x = self.dropout(x)
         x = self.classifier(x)
         return x.squeeze(1)
-        raise NotImplementedError("SmallCNN.forward")
 
 
 class FrozenResNet18(nn.Module):

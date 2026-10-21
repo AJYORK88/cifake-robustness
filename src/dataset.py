@@ -83,15 +83,22 @@ def pool_from_path(rel_path: str) -> str:
     return rel_path.split("/")[-3].lower()
 
 
+def data_root(raw_dir: Path) -> Path:
+    """The folder that directly contains train/ and test/ (raw_dir itself, or a nested folder
+    if the zip unpacked into a subfolder). All split paths are relative to this folder, so the
+    same split files work no matter how each partner unzipped the dataset."""
+    return find_class_dirs(Path(raw_dir))[("train", "REAL")].parent.parent
+
+
 def list_images(raw_dir: Path, pool: str) -> list[str]:
-    """Sorted relative POSIX paths of every image in one pool ('train' or 'test')."""
-    raw_dir = Path(raw_dir)
-    dirs = find_class_dirs(raw_dir)
+    """Sorted POSIX paths (relative to data_root) of every image in one pool ('train' or 'test')."""
+    root = data_root(raw_dir)
+    dirs = find_class_dirs(root)
     paths = []
     for cls in LABELS:
         for p in dirs[(pool, cls)].iterdir():
             if p.suffix.lower() in IMAGE_EXTS:
-                paths.append(p.relative_to(raw_dir).as_posix())
+                paths.append(p.relative_to(root).as_posix())
     return sorted(paths)
 
 
@@ -107,9 +114,9 @@ def eval_duplicates_in_train(raw_dir: Path, train: list[str], held_out: list[str
     CIFAKE ships some byte-identical images under different names, including across the
     official train/test folders. Training on such a copy leaks the held-out image into training.
     """
-    raw_dir = Path(raw_dir)
-    held_out_digests = {file_digest(raw_dir / p) for p in held_out}
-    return {p for p in train if file_digest(raw_dir / p) in held_out_digests}
+    root = data_root(raw_dir)
+    held_out_digests = {file_digest(root / p) for p in held_out}
+    return {p for p in train if file_digest(root / p) in held_out_digests}
 
 
 def make_split(raw_dir: Path, val_per_class: int, seed: int,
@@ -177,8 +184,12 @@ class CifakeDataset(Dataset):
         return len(self.rel_paths)
 
     def __getitem__(self, idx: int) -> tuple[torch.Tensor, int]:
-        with Image.open(self.raw_dir / self.rel_paths[idx]) as im:
-            img = im.convert("RGB")
+        path = self.raw_dir / self.rel_paths[idx]
+        try:
+            with Image.open(path) as im:
+                img = im.convert("RGB")
+        except FileNotFoundError:
+            raise FileNotFoundError(_missing_msg(self.raw_dir, self.rel_paths[idx])) from None
         if self.corrupt is not None:
             img = self.corrupt(img)
         if img.size != (self.image_size, self.image_size):
@@ -187,11 +198,20 @@ class CifakeDataset(Dataset):
         return self.to_tensor(img), self.labels[idx]
 
 
+def _missing_msg(root: Path, rel: str) -> str:
+    return (f"Image listed in the split is missing: {Path(root) / rel}\n"
+            f"The split files expect train/ and test/ directly inside {root}. Check how CIFAKE was "
+            f"unzipped (see README) and run: python -m src.dataset --check")
+
+
 def build_dataset(cfg: dict, split: str, corrupt=None) -> CifakeDataset:
     if split == "train" and corrupt is not None:
         raise ValueError("Corruptions are test-time only; refusing to corrupt the training split.")
-    return CifakeDataset(repo_path(cfg["data"]["raw_dir"]), split_paths(cfg, split),
-                         cfg["data"]["image_size"], corrupt)
+    root = data_root(repo_path(cfg["data"]["raw_dir"]))
+    paths = split_paths(cfg, split)
+    if paths and not (root / paths[0]).exists():          # fail fast, before a long run starts
+        raise FileNotFoundError(_missing_msg(root, paths[0]))
+    return CifakeDataset(root, paths, cfg["data"]["image_size"], corrupt)
 
 
 def build_loader(cfg: dict, split: str, corrupt=None, shuffle: bool | None = None,
@@ -213,6 +233,15 @@ def _check(cfg: dict) -> None:
         expected = EXPECTED_COUNTS[(pool, cls)]
         flag = "" if n == expected else f"  <-- expected {expected}"
         print(f"  {pool}/{cls:4s} -> {d.relative_to(raw_dir).as_posix():30s} {n:6d} images{flag}")
+    root = data_root(raw_dir)
+    splits_dir = repo_path(cfg["data"]["splits_dir"])
+    for name in ("train", "val"):
+        if not (splits_dir / f"{name}.txt").exists():
+            continue
+        paths = read_split(splits_dir / f"{name}.txt")
+        missing = [p for p in paths if not (root / p).exists()]
+        status = "OK" if not missing else f"MISSING {len(missing)} (e.g. {missing[0]})"
+        print(f"  split {name}.txt: {len(paths)} listed images -> {status}")
 
 
 def main() -> None:
