@@ -1,0 +1,19 @@
+{
+  "model": "smallcnn",
+  "split": "val",
+  "corrupt": "none",
+  "corrupt_params": null,
+  "checkpoint": "results/smallcnn_best.pt",
+  "checkpoint_epoch": 15,
+  "metrics": {
+    "roc_auc": 0.9897798800000001,
+    "accuracy": 0.9396,
+    "macro_f1": 0.9395224896035755,
+    "fpr_real": 0.0246,
+    "miss_rate_fake": 0.0962,
+    "threshold": 0.5,
+    "n": 10000,
+    "n_real": 5000,
+    "n_fake": 5000
+  }
+}

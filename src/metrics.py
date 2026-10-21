@@ -22,8 +22,18 @@ def fpr_on_real(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     return float((y_pred[real] == 1).mean())
 
 
+def miss_rate_on_fake(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Miss rate on fake images (false-negative rate): P(pred = REAL | true = FAKE)."""
+    y_true = np.asarray(y_true)
+    y_pred = np.asarray(y_pred)
+    fake = y_true == 1
+    if not fake.any():
+        return float("nan")
+    return float((y_pred[fake] == 0).mean())
+
+
 def compute_metrics(y_true, y_score, threshold: float = 0.5) -> dict:
-    """ROC-AUC, accuracy, macro-F1, and real-image FPR.
+    """ROC-AUC, accuracy, macro-F1, real-image FPR, and fake-image miss rate.
 
     y_score is P(FAKE) in [0, 1]; predictions use score >= threshold -> FAKE.
     """
@@ -36,6 +46,7 @@ def compute_metrics(y_true, y_score, threshold: float = 0.5) -> dict:
         "accuracy": float(accuracy_score(y_true, y_pred)),
         "macro_f1": float(f1_score(y_true, y_pred, average="macro")),
         "fpr_real": fpr_on_real(y_true, y_pred),
+        "miss_rate_fake": miss_rate_on_fake(y_true, y_pred),
         "threshold": float(threshold),
         "n": int(len(y_true)),
         "n_real": int((y_true == 0).sum()),

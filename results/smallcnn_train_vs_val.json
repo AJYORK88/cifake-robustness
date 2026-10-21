@@ -1,0 +1,33 @@
+{
+  "model": "smallcnn",
+  "checkpoint": "results/smallcnn_best.pt",
+  "checkpoint_epoch": 15,
+  "corrupt": "none",
+  "train": {
+    "roc_auc": 0.9939049147940847,
+    "accuracy": 0.9542391632304134,
+    "macro_f1": 0.954188564930238,
+    "fpr_real": 0.018155555555555557,
+    "miss_rate_fake": 0.07368444714186166,
+    "threshold": 0.5,
+    "n": 89487,
+    "n_real": 45000,
+    "n_fake": 44487
+  },
+  "val": {
+    "roc_auc": 0.9897798800000001,
+    "accuracy": 0.9396,
+    "macro_f1": 0.9395224896035755,
+    "fpr_real": 0.0246,
+    "miss_rate_fake": 0.0962,
+    "threshold": 0.5,
+    "n": 10000,
+    "n_real": 5000,
+    "n_fake": 5000
+  },
+  "train_minus_val": {
+    "roc_auc": 0.004125034794084659,
+    "accuracy": 0.014639163230413366,
+    "macro_f1": 0.01466607532666242
+  }
+}

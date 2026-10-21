@@ -22,3 +22,10 @@ def test_single_class_auc_is_nan_not_crash():
 def test_format_names_split_and_corruption():
     line = format_metrics(compute_metrics([0, 1], [0.1, 0.9]), "val", "jpeg40", "smallcnn")
     assert "split=val" in line and "corrupt=jpeg40" in line
+
+
+def test_miss_rate_is_real_given_fake():
+    from src.metrics import miss_rate_on_fake
+    # 4 FAKE: one predicted REAL -> 0.25. REAL rows must not affect it.
+    assert miss_rate_on_fake([1, 1, 1, 1, 0, 0], [0, 1, 1, 1, 1, 1]) == 0.25
+    assert compute_metrics([0, 1, 1], [0.1, 0.2, 0.9])["miss_rate_fake"] == 0.5
