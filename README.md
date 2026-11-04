@@ -26,7 +26,7 @@ applied **only at test time**?
 | `src/dataset.py` (loader, layout detection, frozen split) | ✅ implemented | shared |
 | `src/metrics.py`, `src/inference.py`, `src/evaluate.py` | ✅ implemented | shared |
 | `src/baseline.py` (features + logistic regression) | ✅ implemented | Andrew York |
-| `src/corrupt.py` (jpeg / blur / resample) | 🟡 TODO stub | Angelette Munoz |
+| `src/corrupt.py` (jpeg / blur / resample) | 🟡 TODO stub | Andrew York |
 | `src/model.py` (SmallCNN, FrozenResNet18) | 🟡 TODO stub | Angelette Munoz |
 | `src/train.py` (training loop) | 🟡 TODO stub | Angelette Munoz |
 | `src/failure_cases.py` (qualitative analysis) | 🟡 TODO stub | _TBD_ |
