@@ -2,6 +2,7 @@
   "model": "baseline_logreg",
   "split": "val",
   "corrupt": "none",
+  "corrupt_params": null,
   "n_features": 108,
   "metrics": {
     "roc_auc": 0.927273,

@@ -1,6 +1,7 @@
 """Config sanity + plumbing. Includes ready-made acceptance tests for the TODO stubs:
 they SKIP while a stub raises NotImplementedError and start enforcing once implemented."""
 
+import numpy as np
 import pytest
 import torch
 from PIL import Image
@@ -46,7 +47,7 @@ def test_corruption_returns_32px_rgb_and_changes_image(name):
     img = Image.effect_noise((32, 32), 64).convert("RGB")
     out = _skip_if_todo(get_corruption(name, c), img)
     assert out.mode == "RGB" and out.size == (32, 32)
-    assert list(out.getdata()) != list(img.getdata())
+    assert not np.array_equal(np.asarray(out), np.asarray(img))
 
 
 def test_smallcnn_outputs_one_logit_per_image():

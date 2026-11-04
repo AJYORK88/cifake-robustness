@@ -1,6 +1,8 @@
 """Classical baseline: logistic regression on hand-crafted features.
 
-    python -m src.baseline
+    python -m src.baseline                            # clean validation only
+    python -m src.baseline --corrupt all              # clean + every corruption in the config
+    python -m src.baseline --corrupt none jpeg40 blur # any subset
 
 Requirements (from the project spec):
   - Features: 32-bin RGB color histograms, local binary patterns, and high-frequency energy
@@ -9,6 +11,10 @@ Requirements (from the project spec):
   - Report ROC-AUC, accuracy, macro-F1, and real-image FPR, using src.metrics so the numbers
     are defined the same way as for the CNNs.
   - Save results/baseline_val.json.
+
+The model is fit ONCE on clean training images; --corrupt only changes the validation images it is
+scored on (test-time corruption). Each corruption writes results/eval_baseline_val_<corrupt>.json,
+named like evaluate.py's output; the clean result is also kept as results/baseline_val.json.
 """
 
 from __future__ import annotations
@@ -24,6 +30,7 @@ from sklearn.preprocessing import StandardScaler
 from tqdm import tqdm
 
 from src.config import load_config, repo_path, set_seed
+from src.corrupt import corruption_names, get_corruption
 from src.dataset import data_root, label_from_path, split_paths
 from src.metrics import compute_metrics, format_metrics, save_json
 
@@ -59,14 +66,23 @@ def highfreq_energy(img: np.ndarray, cutoff: float) -> np.ndarray:
     return np.array([high / total, np.log(high + 1e-12)], dtype=np.float32)
 
 
-def build_feature_matrix(cfg: dict, split: str) -> tuple[np.ndarray, np.ndarray]:
-    """Return (X, y) for the given split: one feature row and one label per image."""
+def build_feature_matrix(cfg: dict, split: str, corrupt: str = "none") -> tuple[np.ndarray, np.ndarray]:
+    """Return (X, y) for the given split: one feature row and one label per image.
+
+    `corrupt` names a test-time corruption from the config, applied to each image before features.
+    """
+    if split == "train" and corrupt != "none":
+        raise ValueError("Corruptions are test-time only; refusing to corrupt the training split.")
+    corrupt_fn = get_corruption(corrupt, cfg)
     raw_dir = data_root(repo_path(cfg["data"]["raw_dir"]))
     b = cfg["baseline"]
     rows, labels = [], []
-    for rel in tqdm(split_paths(cfg, split), desc=f"features [{split}]"):
+    for rel in tqdm(split_paths(cfg, split), desc=f"features [{split} corrupt={corrupt}]"):
         with Image.open(raw_dir / rel) as im:
-            img = np.asarray(im.convert("RGB"))
+            pil = im.convert("RGB")
+        if corrupt_fn is not None:
+            pil = corrupt_fn(pil)
+        img = np.asarray(pil)
         rows.append(np.concatenate([
             color_histogram(img, b["color_bins"]),
             lbp_histogram(img, b["lbp"]["points"], b["lbp"]["radius"], b["lbp"]["method"]),
@@ -79,25 +95,39 @@ def build_feature_matrix(cfg: dict, split: str) -> tuple[np.ndarray, np.ndarray]
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--corrupt", nargs="+", default=["none"],
+                    help="validation corruptions to score: 'none', names from the config, or 'all'")
     args = ap.parse_args()
     cfg = load_config(args.config)
     set_seed(cfg["seed"])
 
-    X_tr, y_tr = build_feature_matrix(cfg, "train")
-    X_va, y_va = build_feature_matrix(cfg, "val")
+    valid = corruption_names(cfg)
+    corruptions = valid if args.corrupt == ["all"] else args.corrupt
+    unknown = [c for c in corruptions if c not in valid]
+    if unknown:
+        ap.error(f"unknown corruption(s) {unknown}; choose from {valid} or 'all'")
 
+    X_tr, y_tr = build_feature_matrix(cfg, "train")
     scaler = StandardScaler().fit(X_tr)
     lr = cfg["baseline"]["logreg"]
     clf = LogisticRegression(max_iter=lr["max_iter"], C=lr["C"], random_state=cfg["seed"])
     clf.fit(scaler.transform(X_tr), y_tr)
-    scores = clf.predict_proba(scaler.transform(X_va))[:, 1]
 
-    metrics = compute_metrics(y_va, scores, cfg["eval"]["threshold"])
-    print(format_metrics(metrics, "val", "none", "baseline"))
-    out = repo_path(cfg["output"]["results_dir"]) / "baseline_val.json"
-    save_json({"model": "baseline_logreg", "split": "val", "corrupt": "none",
-               "n_features": int(X_tr.shape[1]), "metrics": metrics}, out)
-    print(f"[model=baseline split=val corrupt=none] wrote {out}")
+    results_dir = repo_path(cfg["output"]["results_dir"])
+    for corrupt in corruptions:
+        X_va, y_va = build_feature_matrix(cfg, "val", corrupt)
+        scores = clf.predict_proba(scaler.transform(X_va))[:, 1]
+        metrics = compute_metrics(y_va, scores, cfg["eval"]["threshold"])
+        print(format_metrics(metrics, "val", corrupt, "baseline"))
+        record = {"model": "baseline_logreg", "split": "val", "corrupt": corrupt,
+                  "corrupt_params": cfg["corruptions"].get(corrupt), "n_features": int(X_tr.shape[1]),
+                  "metrics": metrics}
+        outs = [results_dir / f"eval_baseline_val_{corrupt}.json"]
+        if corrupt == "none":
+            outs.append(results_dir / "baseline_val.json")
+        for out in outs:
+            save_json(record, out)
+        print(f"[model=baseline split=val corrupt={corrupt}] wrote {', '.join(o.name for o in outs)}")
 
 
 if __name__ == "__main__":
