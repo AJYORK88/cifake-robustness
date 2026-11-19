@@ -1,13 +1,15 @@
 """Models. Both output ONE LOGIT per image, shape (N,). They are trained with BCEWithLogitsLoss.
 
 STATUS: build_model() is implemented (shared plumbing used by train.py / evaluate.py).
-        SmallCNN and FrozenResNet18 are TODO for the team.
+        SmallCNN is implemented.
+        FrozenResNet18 is implemented.
 """
 
 from __future__ import annotations
 
 import torch
 from torch import nn
+from torchvision import models
 
 
 class SmallCNN(nn.Module):
@@ -75,10 +77,57 @@ class FrozenResNet18(nn.Module):
 
     def __init__(self, weights: str = "IMAGENET1K_V1", input_size: int = 224, freeze_backbone: bool = True):
         super().__init__()
-        raise NotImplementedError("FrozenResNet18.__init__")
+        self.input_size = input_size
+        self.freeze_backbone = freeze_backbone
+
+    
+        if isinstance(weights, str):
+            try:
+                weights_enum = getattr(models.ResNet18_Weights, weights)
+            except AttributeError:
+                weights_enum = weights
+        else:
+            weights_enum = weights
+
+        #this will load the resnet18 model with the specified weights
+        self.resnet = models.resnet18(weights=weights_enum)
+
+       # Replace the classification head with a linear layer producing one logit
+        in_features = self.resnet.fc.in_features
+        self.resnet.fc = nn.Linear(in_features, 1)
+
+        if self.freeze_backbone:
+            # Freeze all parameters in the backbone
+            for name, param in self.resnet.named_parameters():
+                if not name.startswith("fc."):
+                    param.requires_grad = False
+            # Set backbone to eval mode initially
+            self.resnet.eval()
+
+    def train(self, mode: bool = True):
+        """Override train to keep frozen backbone in eval mode (protecting BatchNorm running stats)."""
+        super().train(mode)
+        if self.freeze_backbone:
+            self.resnet.eval()
+            # Ensure the newly added classification head remains in training mode when model.train() is called
+            self.resnet.fc.train(mode)
+        return self
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        raise NotImplementedError("FrozenResNet18.forward")
+        
+        if x.shape[-1] != self.input_size or x.shape[-2] != self.input_size:
+            x = nn.functional.interpolate(
+                x, size=(self.input_size, self.input_size), mode="bilinear", align_corners=False
+            )
+
+        #this will normalize the input images using ImageNet mean and std
+        mean = torch.tensor([0.485, 0.456, 0.406], device=x.device).view(1, 3, 1, 1)
+        std = torch.tensor([0.229, 0.224, 0.225], device=x.device).view(1, 3, 1, 1)
+        x = (x - mean) / std
+
+        
+        x = self.resnet(x)
+        return x.squeeze(1)
 
 
 MODEL_NAMES = ("smallcnn", "resnet18")
