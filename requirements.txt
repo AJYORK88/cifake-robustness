@@ -13,5 +13,6 @@ matplotlib==3.11.2
 
 # Tooling
 kaggle==2.2.4        # dataset download CLI
+gradio==6.32.0       # runnable demo (python -m src.demo)
 pytest==9.1.1
 ipykernel==7.4.0     # run notebooks/ in VS Code or Jupyter
