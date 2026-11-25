@@ -28,6 +28,7 @@ from torch import nn
 from tqdm import tqdm
 
 from src.config import get_device, load_config, repo_path, set_seed
+from src.corrupt import build_train_augment
 from src.dataset import build_loader
 from src.inference import predict_scores, save_checkpoint
 from src.metrics import compute_metrics, save_json
@@ -54,6 +55,8 @@ def main() -> None:
         cfg["train"]["model"] = args.model
 
     model_name = cfg["train"]["model"]
+    run_name = cfg["train"].get("run_name", model_name)   # output file names; "smallcnn_aug" for the augmentation run
+    augment = build_train_augment(cfg)                    # None unless the config has train.augment
     set_seed(cfg["seed"])
     device = get_device()
 
@@ -61,15 +64,16 @@ def main() -> None:
     results_dir.mkdir(parents=True, exist_ok=True)
 
     with open(
-        results_dir / f"{model_name}_config.yaml",
+        results_dir / f"{run_name}_config.yaml",
         "w",
         encoding="utf-8",
     ) as f:
         yaml.safe_dump(cfg, f, sort_keys=False)
 
-    print(f"[train model={model_name}] device={device} seed={cfg['seed']}")
+    print(f"[train model={model_name} run={run_name}] device={device} seed={cfg['seed']} "
+          f"augment={'on' if augment else 'off'}")
 
-    train_loader = build_loader(cfg, "train")
+    train_loader = build_loader(cfg, "train", augment=augment)
     val_loader = build_loader(cfg, "val", shuffle=False)
 
     model = build_model(model_name, cfg).to(device)
@@ -84,7 +88,7 @@ def main() -> None:
     patience = int(cfg["train"]["early_stopping"]["patience"])
 
     history = {
-        "model": model_name,
+        "model": run_name,
         "epochs": [],
     }
 
@@ -92,8 +96,8 @@ def main() -> None:
     best_epoch = 0
     epochs_without_improvement = 0
 
-    checkpoint_path = results_dir / f"{model_name}_best.pt"
-    history_path = results_dir / f"{model_name}_history.json"
+    checkpoint_path = results_dir / f"{run_name}_best.pt"
+    history_path = results_dir / f"{run_name}_history.json"
 
     for epoch in range(1, max_epochs + 1):
         model.train()
@@ -159,6 +163,7 @@ def main() -> None:
                 cfg,
                 epoch,
                 val_auc,
+                run_name=run_name,
             )
             print(f"  saved best checkpoint: {checkpoint_path}")
         else:

@@ -47,7 +47,7 @@ def main() -> None:
 
     device = get_device()
     model, ckpt = load_checkpoint(repo_path(args.checkpoint), device)
-    model_name = ckpt["model_name"]
+    model_name = ckpt.get("run_name", ckpt["model_name"])   # e.g. "smallcnn_aug"; older checkpoints lack it
     tag = f"[model={model_name} split={args.split} corrupt={args.corrupt}]"
     print(f"{tag} checkpoint={args.checkpoint} (epoch {ckpt['epoch']}, val_auc {ckpt['val_auc']:.4f}) device={device}")
 
@@ -57,7 +57,7 @@ def main() -> None:
     print(format_metrics(metrics, args.split, args.corrupt, model_name))
 
     out = results_dir / f"eval_{model_name}_{args.split}_{args.corrupt}.json"
-    save_json({"model": model_name, "split": args.split, "corrupt": args.corrupt,
+    save_json({"model": model_name, "architecture": ckpt["model_name"], "split": args.split, "corrupt": args.corrupt,
                "corrupt_params": cfg["corruptions"].get(args.corrupt), "checkpoint": args.checkpoint,
                "checkpoint_epoch": ckpt["epoch"], "metrics": metrics}, out)
     print(f"{tag} wrote {out}")

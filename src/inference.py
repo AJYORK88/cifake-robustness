@@ -2,7 +2,8 @@
 
 Checkpoint contract -- train.py must save exactly this dict with torch.save:
     {
-        "model_name": "smallcnn" | "resnet18",
+        "model_name": "smallcnn" | "resnet18",   # architecture
+        "run_name":   str,                      # output name, e.g. "smallcnn_aug"; defaults to model_name
         "state_dict": model.state_dict(),
         "config":     cfg,          # the full config dict used for the run
         "epoch":      int,          # epoch of the best val AUC
@@ -24,11 +25,11 @@ from src.model import build_model
 
 
 def save_checkpoint(path: str | Path, model: nn.Module, model_name: str, cfg: dict,
-                    epoch: int, val_auc: float) -> None:
+                    epoch: int, val_auc: float, run_name: str | None = None) -> None:
     path = Path(path)
     path.parent.mkdir(parents=True, exist_ok=True)
-    torch.save({"model_name": model_name, "state_dict": model.state_dict(), "config": cfg,
-                "epoch": epoch, "val_auc": val_auc}, path)
+    torch.save({"model_name": model_name, "run_name": run_name or model_name, "state_dict": model.state_dict(),
+                "config": cfg, "epoch": epoch, "val_auc": val_auc}, path)
 
 
 def load_checkpoint(path: str | Path, device: torch.device) -> tuple[nn.Module, dict]:

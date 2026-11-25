@@ -1,0 +1,16 @@
+# Augmentation experiment: identical to default.yaml EXCEPT that training images are randomly corrupted.
+# The main protocol (default.yaml) is unchanged: there, corruptions are test-time only.
+#
+#   python -m src.train --config configs/smallcnn_aug.yaml
+#   python -m src.evaluate --checkpoint results/smallcnn_aug_best.pt --corrupt <none|jpeg70|jpeg40|blur|resample>
+
+base: configs/default.yaml
+
+train:
+  run_name: smallcnn_aug         # output names: results/smallcnn_aug_best.pt, _history.json, eval_smallcnn_aug_*
+  augment:
+    p: 0.5                       # chance each training image is corrupted (otherwise it stays clean)
+    ops:                         # one op is chosen uniformly; its parameter is drawn uniformly from [low, high]
+      jpeg: {quality: [30, 90]}
+      gaussian_blur: {sigma: [0.5, 1.5]}
+    # downsample_upsample is deliberately NOT here: resampling is the held-out ("unseen") corruption.

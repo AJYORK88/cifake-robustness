@@ -28,7 +28,7 @@ def main() -> None:
     set_seed(cfg["seed"])
     device = get_device()
     model, ckpt = load_checkpoint(repo_path(args.checkpoint), device)
-    model_name = ckpt["model_name"]
+    model_name = ckpt.get("run_name", ckpt["model_name"])
 
     rows = {}
     for split in ("train", "val"):

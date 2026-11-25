@@ -204,19 +204,23 @@ def _missing_msg(root: Path, rel: str) -> str:
             f"unzipped (see README) and run: python -m src.dataset --check")
 
 
-def build_dataset(cfg: dict, split: str, corrupt=None) -> CifakeDataset:
+def build_dataset(cfg: dict, split: str, corrupt=None, augment=None) -> CifakeDataset:
+    """`corrupt` = a fixed test-time corruption (val/test only). `augment` = random training-time
+    augmentation (train only; used solely by the augmentation experiment)."""
     if split == "train" and corrupt is not None:
         raise ValueError("Corruptions are test-time only; refusing to corrupt the training split.")
+    if augment is not None and split != "train":
+        raise ValueError("Augmentation is for training only; val/test images must not be augmented.")
     root = data_root(repo_path(cfg["data"]["raw_dir"]))
     paths = split_paths(cfg, split)
     if paths and not (root / paths[0]).exists():          # fail fast, before a long run starts
         raise FileNotFoundError(_missing_msg(root, paths[0]))
-    return CifakeDataset(root, paths, cfg["data"]["image_size"], corrupt)
+    return CifakeDataset(root, paths, cfg["data"]["image_size"], corrupt or augment)
 
 
 def build_loader(cfg: dict, split: str, corrupt=None, shuffle: bool | None = None,
-                 batch_size: int | None = None) -> DataLoader:
-    ds = build_dataset(cfg, split, corrupt)
+                 batch_size: int | None = None, augment=None) -> DataLoader:
+    ds = build_dataset(cfg, split, corrupt, augment)
     shuffle = (split == "train") if shuffle is None else shuffle
     gen = torch.Generator().manual_seed(cfg["seed"])
     return DataLoader(ds, batch_size=batch_size or cfg["train"]["batch_size"], shuffle=shuffle,

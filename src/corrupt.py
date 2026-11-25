@@ -16,6 +16,7 @@ STATUS: implemented.
 from __future__ import annotations
 
 import io
+import random
 from functools import partial
 from typing import Callable
 
@@ -72,3 +73,45 @@ def get_corruption(name: str, cfg: dict) -> Callable[[Image.Image], Image.Image]
         raise ValueError(f"Unknown corruption {name!r}; choose from {corruption_names(cfg)}") from None
     fn = _FUNCTIONS[spec.pop("type")]
     return partial(fn, **spec)
+
+
+# ---------------------------------------------------------------- augmentation experiment only
+class TrainAugment:
+    """Training-time augmentation, used ONLY by the augmentation experiment (configs/smallcnn_aug.yaml).
+    The main protocol never corrupts training images.
+
+    With probability `p`, one corruption is chosen uniformly from `ops` and applied with its parameter drawn
+    uniformly from a [low, high] range, e.g. ops = {"jpeg": {"quality": [30, 90]}}. Integer ranges draw
+    integers. Otherwise the image is returned unchanged. Seeded, so runs are reproducible (num_workers=0).
+    """
+
+    def __init__(self, p: float, ops: dict, seed: int):
+        unknown = sorted(set(ops) - set(_FUNCTIONS))
+        if unknown:
+            raise ValueError(f"Unknown augmentation op(s) {unknown}; choose from {sorted(_FUNCTIONS)}")
+        self.p = float(p)
+        self.ops = ops
+        self.rng = random.Random(seed)
+
+    def _draw(self, value):
+        if isinstance(value, (list, tuple)):
+            low, high = value
+            if isinstance(low, int) and isinstance(high, int):
+                return self.rng.randint(low, high)
+            return self.rng.uniform(low, high)
+        return value
+
+    def __call__(self, img: Image.Image) -> Image.Image:
+        if self.rng.random() >= self.p:
+            return img
+        name = self.rng.choice(sorted(self.ops))
+        params = {k: self._draw(v) for k, v in self.ops[name].items()}
+        return _FUNCTIONS[name](img, **params)
+
+
+def build_train_augment(cfg: dict) -> TrainAugment | None:
+    """TrainAugment from cfg['train']['augment'], or None when the config has no augmentation."""
+    aug = cfg["train"].get("augment")
+    if not aug:
+        return None
+    return TrainAugment(aug["p"], aug["ops"], cfg["seed"])
