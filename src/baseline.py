@@ -3,6 +3,7 @@
     python -m src.baseline                            # clean validation only
     python -m src.baseline --corrupt all              # clean + every corruption in the config
     python -m src.baseline --corrupt none jpeg40 blur # any subset
+    python -m src.baseline --split test --corrupt all # FINAL REPORTING ONLY: official test set
 
 Requirements (from the project spec):
   - Features: 32-bin RGB color histograms, local binary patterns, and high-frequency energy
@@ -12,14 +13,16 @@ Requirements (from the project spec):
     are defined the same way as for the CNNs.
   - Save results/baseline_val.json.
 
-The model is fit ONCE on clean training images; --corrupt only changes the validation images it is
-scored on (test-time corruption). Each corruption writes results/eval_baseline_val_<corrupt>.json,
-named like evaluate.py's output; the clean result is also kept as results/baseline_val.json.
+The model is fit ONCE on clean training images; --corrupt only changes the images it is scored on
+(test-time corruption). Each corruption writes results/eval_baseline_<split>_<corrupt>.json, named like
+evaluate.py's output; the clean validation result is also kept as results/baseline_val.json.
+--split test scores the official test set; each such run is logged to results/test_runs.log.
 """
 
 from __future__ import annotations
 
 import argparse
+from datetime import datetime, timezone
 
 import numpy as np
 from PIL import Image
@@ -95,8 +98,10 @@ def build_feature_matrix(cfg: dict, split: str, corrupt: str = "none") -> tuple[
 def main() -> None:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("--config", default="configs/default.yaml")
+    ap.add_argument("--split", choices=["val", "test"], default="val",
+                    help="images to score; 'test' is for final reporting only")
     ap.add_argument("--corrupt", nargs="+", default=["none"],
-                    help="validation corruptions to score: 'none', names from the config, or 'all'")
+                    help="corruptions to score: 'none', names from the config, or 'all'")
     args = ap.parse_args()
     cfg = load_config(args.config)
     set_seed(cfg["seed"])
@@ -107,27 +112,33 @@ def main() -> None:
     if unknown:
         ap.error(f"unknown corruption(s) {unknown}; choose from {valid} or 'all'")
 
+    results_dir = repo_path(cfg["output"]["results_dir"])
+    results_dir.mkdir(parents=True, exist_ok=True)
+    if args.split == "test":
+        print("[model=baseline split=test] WARNING: evaluating on the OFFICIAL TEST SET. Final reporting only.")
+        with open(results_dir / "test_runs.log", "a", encoding="utf-8") as f:
+            f.write(f"{datetime.now(timezone.utc).isoformat()}\tbaseline_logreg\t{' '.join(corruptions)}\n")
+
     X_tr, y_tr = build_feature_matrix(cfg, "train")
     scaler = StandardScaler().fit(X_tr)
     lr = cfg["baseline"]["logreg"]
     clf = LogisticRegression(max_iter=lr["max_iter"], C=lr["C"], random_state=cfg["seed"])
     clf.fit(scaler.transform(X_tr), y_tr)
 
-    results_dir = repo_path(cfg["output"]["results_dir"])
     for corrupt in corruptions:
-        X_va, y_va = build_feature_matrix(cfg, "val", corrupt)
-        scores = clf.predict_proba(scaler.transform(X_va))[:, 1]
-        metrics = compute_metrics(y_va, scores, cfg["eval"]["threshold"])
-        print(format_metrics(metrics, "val", corrupt, "baseline"))
-        record = {"model": "baseline_logreg", "split": "val", "corrupt": corrupt,
+        X_ev, y_ev = build_feature_matrix(cfg, args.split, corrupt)
+        scores = clf.predict_proba(scaler.transform(X_ev))[:, 1]
+        metrics = compute_metrics(y_ev, scores, cfg["eval"]["threshold"])
+        print(format_metrics(metrics, args.split, corrupt, "baseline"))
+        record = {"model": "baseline_logreg", "split": args.split, "corrupt": corrupt,
                   "corrupt_params": cfg["corruptions"].get(corrupt), "n_features": int(X_tr.shape[1]),
                   "metrics": metrics}
-        outs = [results_dir / f"eval_baseline_val_{corrupt}.json"]
-        if corrupt == "none":
+        outs = [results_dir / f"eval_baseline_{args.split}_{corrupt}.json"]
+        if args.split == "val" and corrupt == "none":
             outs.append(results_dir / "baseline_val.json")
         for out in outs:
             save_json(record, out)
-        print(f"[model=baseline split=val corrupt={corrupt}] wrote {', '.join(o.name for o in outs)}")
+        print(f"[model=baseline split={args.split} corrupt={corrupt}] wrote {', '.join(o.name for o in outs)}")
 
 
 if __name__ == "__main__":
