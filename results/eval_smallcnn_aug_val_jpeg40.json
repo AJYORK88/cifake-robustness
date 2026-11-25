@@ -1,0 +1,23 @@
+{
+  "model": "smallcnn_aug",
+  "architecture": "smallcnn",
+  "split": "val",
+  "corrupt": "jpeg40",
+  "corrupt_params": {
+    "type": "jpeg",
+    "quality": 40
+  },
+  "checkpoint": "results/smallcnn_aug_best.pt",
+  "checkpoint_epoch": 14,
+  "metrics": {
+    "roc_auc": 0.9741800800000001,
+    "accuracy": 0.9132,
+    "macro_f1": 0.9131572003946425,
+    "fpr_real": 0.109,
+    "miss_rate_fake": 0.0646,
+    "threshold": 0.5,
+    "n": 10000,
+    "n_real": 5000,
+    "n_fake": 5000
+  }
+}
