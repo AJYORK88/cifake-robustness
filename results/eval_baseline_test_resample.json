@@ -1,0 +1,22 @@
+{
+  "model": "baseline_logreg",
+  "split": "test",
+  "corrupt": "resample",
+  "corrupt_params": {
+    "type": "downsample_upsample",
+    "factor": 2,
+    "interpolation": "bilinear"
+  },
+  "n_features": 108,
+  "metrics": {
+    "roc_auc": 0.66057827,
+    "accuracy": 0.61435,
+    "macro_f1": 0.6055396078163087,
+    "fpr_real": 0.5351,
+    "miss_rate_fake": 0.2362,
+    "threshold": 0.5,
+    "n": 20000,
+    "n_real": 10000,
+    "n_fake": 10000
+  }
+}

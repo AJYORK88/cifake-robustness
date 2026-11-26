@@ -1,0 +1,12 @@
+2026-11-25T19:06:15.553032+00:00	baseline_logreg	none jpeg40 jpeg70 blur resample
+2026-11-25T19:12:10.073390+00:00	results/smallcnn_best.pt	none
+2026-11-25T19:13:10.595724+00:00	results/smallcnn_best.pt	jpeg70
+2026-11-25T19:14:16.831536+00:00	results/smallcnn_best.pt	jpeg40
+2026-11-25T19:15:00.633000+00:00	results/smallcnn_best.pt	blur
+2026-11-25T19:15:39.256453+00:00	results/smallcnn_best.pt	resample
+2026-11-25T19:16:19.084965+00:00	results/smallcnn_aug_best.pt	none
+2026-11-25T19:17:15.990477+00:00	results/smallcnn_aug_best.pt	jpeg70
+2026-11-25T19:17:57.206272+00:00	results/smallcnn_aug_best.pt	jpeg40
+2026-11-25T19:18:37.911540+00:00	results/smallcnn_aug_best.pt	blur
+2026-11-25T19:19:16.855053+00:00	results/smallcnn_aug_best.pt	resample
+2026-11-25T19:20:41.648399+00:00	resnet18_best.pt	all corruptions

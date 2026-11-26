@@ -1,0 +1,21 @@
+{
+  "model": "baseline_logreg",
+  "split": "test",
+  "corrupt": "jpeg40",
+  "corrupt_params": {
+    "type": "jpeg",
+    "quality": 40
+  },
+  "n_features": 108,
+  "metrics": {
+    "roc_auc": 0.884144965,
+    "accuracy": 0.8007,
+    "macro_f1": 0.8006389456771136,
+    "fpr_real": 0.1818,
+    "miss_rate_fake": 0.2168,
+    "threshold": 0.5,
+    "n": 20000,
+    "n_real": 10000,
+    "n_fake": 10000
+  }
+}

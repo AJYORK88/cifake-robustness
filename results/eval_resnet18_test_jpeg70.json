@@ -1,0 +1,23 @@
+{
+  "model": "resnet18",
+  "split": "test",
+  "corrupt": "jpeg70",
+  "corrupt_params": {
+    "type": "jpeg",
+    "quality": 70
+  },
+  "checkpoint": "results/resnet18_best.pt",
+  "checkpoint_epoch": 13,
+  "scored_from": "cached backbone features",
+  "metrics": {
+    "roc_auc": 0.9624804650000001,
+    "accuracy": 0.89915,
+    "macro_f1": 0.8991424535862335,
+    "fpr_real": 0.1095,
+    "miss_rate_fake": 0.0922,
+    "threshold": 0.5,
+    "n": 20000,
+    "n_real": 10000,
+    "n_fake": 10000
+  }
+}

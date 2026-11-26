@@ -1,0 +1,23 @@
+{
+  "model": "smallcnn",
+  "architecture": "smallcnn",
+  "split": "test",
+  "corrupt": "blur",
+  "corrupt_params": {
+    "type": "gaussian_blur",
+    "sigma": 1.0
+  },
+  "checkpoint": "results/smallcnn_best.pt",
+  "checkpoint_epoch": 15,
+  "metrics": {
+    "roc_auc": 0.7588420650000001,
+    "accuracy": 0.66255,
+    "macro_f1": 0.6357710410135597,
+    "fpr_real": 0.0663,
+    "miss_rate_fake": 0.6086,
+    "threshold": 0.5,
+    "n": 20000,
+    "n_real": 10000,
+    "n_fake": 10000
+  }
+}

@@ -1,0 +1,23 @@
+{
+  "model": "resnet18",
+  "split": "test",
+  "corrupt": "blur",
+  "corrupt_params": {
+    "type": "gaussian_blur",
+    "sigma": 1.0
+  },
+  "checkpoint": "results/resnet18_best.pt",
+  "checkpoint_epoch": 13,
+  "scored_from": "cached backbone features",
+  "metrics": {
+    "roc_auc": 0.849965705,
+    "accuracy": 0.716,
+    "macro_f1": 0.7011939322503956,
+    "fpr_real": 0.0614,
+    "miss_rate_fake": 0.5066,
+    "threshold": 0.5,
+    "n": 20000,
+    "n_real": 10000,
+    "n_fake": 10000
+  }
+}
