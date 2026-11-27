@@ -7,7 +7,7 @@ from __future__ import annotations
 
 import json
 from pathlib import Path
-
+import matplotlib.pyplot as plt
 import numpy as np
 
 from src.config import load_config, repo_path
@@ -39,9 +39,10 @@ def history(run: str) -> list[dict]:
     return load_json(f"{run}_history.json")["epochs"]
 
 
-def failure_cases(run: str, corrupt: str = "blur") -> dict:
+#In order to graphically visualize the failure cases, i have to change failure_cases so it can accept split
+def failure_cases(run: str, corrupt: str = "blur", split: str = "val") -> dict:
     """Selected examples from src.failure_cases: {"counts": ..., "groups": {name: [{"path", ...}]}}."""
-    return load_json(f"failure_cases_{run}_{corrupt}.json")
+    return load_json(f"failure_cases_{run}_{split}_{corrupt}.json")
 
 
 def gradcam(corrupt: str = "blur", target: str = "fake") -> dict:
@@ -62,3 +63,44 @@ def figure_path(name: str) -> Path:
     """Where to save a figure: results/figures/<name> (folder created if needed)."""
     FIGURES.mkdir(parents=True, exist_ok=True)
     return FIGURES / name
+
+
+MODEL_COLORS = {
+    "baseline": "#7F7F7F",  # gray
+    "smallcnn": "#1F77B4",  # blue
+    "resnet18": "#FF7F0E",  # orange
+    "smallcnn_aug": "#2CA02C",  # green
+}
+
+MODEL_LABELS = {
+    "baseline": "Baseline",
+    "smallcnn": "SmallCNN",
+    "resnet18": "ResNet18",
+    "smallcnn_aug": "SmallCNN + Augmentation",
+}
+
+CONDITION_LABELS = {
+    "none": "No Corruption",
+    "jpeg70": "JPEG 70",
+    "jpeg40": "JPEG 40",
+    "blur": "Blur",
+    "resample": "Resample",
+}
+
+def apply_style() -> None:
+    """Apply a consistent style to all figures."""
+    plt.rcParams.update({
+        "figure.dpi": 300,
+        "savefig.dpi": 300,
+        "font.sans-serif": "Arial",
+        "axes.spines.top": False,
+        "axes.spines.right": False,
+        "axes.grid": True,
+        "grid.alpha": 0.25,
+        "grid.linestyle": "--",
+    })
+
+def split_label(split:str) -> str:
+    """Human readable label for dataset split."""
+    return "Validation" if split == "val" else "Test" if split == "test" else split.upper()
+    

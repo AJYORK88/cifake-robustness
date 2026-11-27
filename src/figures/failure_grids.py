@@ -7,8 +7,12 @@ Caption in the report must state the split and the metric.
 
 from __future__ import annotations
 
+import matplotlib.pyplot as plt
+import numpy as np
+
 from src.figures import data
 
 
-def make():
+
+def make(split: str = "val"):
     raise NotImplementedError("failure_grids")
