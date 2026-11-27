@@ -18,6 +18,8 @@ venv/
 .ipynb_checkpoints/
 .pytest_cache/
 wandb/
+mlruns/
+mlflow.db
 
 # OS / editor
 .DS_Store
