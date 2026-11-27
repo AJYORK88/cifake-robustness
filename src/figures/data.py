@@ -8,6 +8,8 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import numpy as np
+
 from src.config import load_config, repo_path
 from src.dataset import data_root
 
@@ -40,6 +42,15 @@ def history(run: str) -> list[dict]:
 def failure_cases(run: str, corrupt: str = "blur") -> dict:
     """Selected examples from src.failure_cases: {"counts": ..., "groups": {name: [{"path", ...}]}}."""
     return load_json(f"failure_cases_{run}_{corrupt}.json")
+
+
+def gradcam(corrupt: str = "blur", target: str = "fake") -> dict:
+    """Grad-CAM arrays saved by src.gradcam (see that module's docstring for the shapes)."""
+    path = RESULTS / f"gradcam_{corrupt}_{target}.npz"
+    if not path.exists():
+        raise FileNotFoundError(f"{path} not found; run the experiment that writes it first")
+    with np.load(path) as arrays:
+        return {k: arrays[k] for k in arrays.files}
 
 
 def image_path(rel_path: str) -> Path:

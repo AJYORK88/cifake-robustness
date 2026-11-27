@@ -11,7 +11,7 @@ from __future__ import annotations
 import importlib
 import sys
 
-FIGURE_MODULES = ("sample_grid", "training_curves", "robustness", "augmentation", "failure_grids")
+FIGURE_MODULES = ("sample_grid", "training_curves", "robustness", "augmentation", "failure_grids", "gradcam")
 
 
 def main() -> None:

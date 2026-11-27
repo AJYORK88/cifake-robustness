@@ -1,0 +1,48 @@
+{
+  "corrupt": "blur",
+  "target": "predicted",
+  "split": "val",
+  "n_images": 16,
+  "models": {
+    "smallcnn": {
+      "mean_heatmap_similarity_clean_vs_corrupted": 0.4593769317605739,
+      "by_group": {
+        "broken_by_corruption": {
+          "mean_p_fake_clean": 0.9999179244041443,
+          "mean_p_fake_corrupted": 0.00018563323828857392,
+          "mean_heatmap_similarity": 0.3378280945444252
+        },
+        "correct_real": {
+          "mean_p_fake_clean": 3.138843567285221e-07,
+          "mean_p_fake_corrupted": 0.0003680848458316177,
+          "mean_heatmap_similarity": 0.7519760860962584
+        },
+        "false_positive_real": {
+          "mean_p_fake_clean": 0.9964708089828491,
+          "mean_p_fake_corrupted": 0.5452250838279724,
+          "mean_heatmap_similarity": 0.40987545185718705
+        }
+      }
+    },
+    "smallcnn_aug": {
+      "mean_heatmap_similarity_clean_vs_corrupted": 0.478601872421805,
+      "by_group": {
+        "broken_by_corruption": {
+          "mean_p_fake_clean": 0.999351441860199,
+          "mean_p_fake_corrupted": 0.5387948751449585,
+          "mean_heatmap_similarity": 0.2589481714490357
+        },
+        "correct_real": {
+          "mean_p_fake_clean": 0.00011183183960383758,
+          "mean_p_fake_corrupted": 0.002607677597552538,
+          "mean_heatmap_similarity": 0.8003938176705261
+        },
+        "false_positive_real": {
+          "mean_p_fake_clean": 0.9930353760719299,
+          "mean_p_fake_corrupted": 0.8882921934127808,
+          "mean_heatmap_similarity": 0.5961173291186225
+        }
+      }
+    }
+  }
+}
