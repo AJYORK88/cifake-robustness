@@ -49,24 +49,24 @@ def find_class_dirs(raw_dir: Path, max_depth: int = 3) -> dict[tuple[str, str], 
     if not raw_dir.is_dir():
         raise FileNotFoundError(f"{raw_dir} does not exist. Unzip CIFAKE there first (see README).")
 
-    candidates = [raw_dir]
+    # Breadth-first, checking each level before descending, so the 120k image files inside the class
+    # folders are never listed once train/ and test/ are found.
     frontier = [raw_dir]
-    for _ in range(max_depth):
-        frontier = [c for d in frontier for c in sorted(d.iterdir()) if c.is_dir()]
-        candidates.extend(frontier)
-
-    for root in candidates:
-        found: dict[tuple[str, str], Path] = {}
-        subdirs = {c.name.lower(): c for c in root.iterdir() if c.is_dir()}
-        for pool in POOLS:
-            if pool not in subdirs:
-                break
-            classes = {c.name.upper(): c for c in subdirs[pool].iterdir() if c.is_dir()}
-            for cls in LABELS:
-                if cls in classes:
-                    found[(pool, cls)] = classes[cls]
-        if len(found) == 4:
-            return found
+    for depth in range(max_depth + 1):
+        for root in frontier:
+            found: dict[tuple[str, str], Path] = {}
+            subdirs = {c.name.lower(): c for c in root.iterdir() if c.is_dir()}
+            for pool in POOLS:
+                if pool not in subdirs:
+                    break
+                classes = {c.name.upper(): c for c in subdirs[pool].iterdir() if c.is_dir()}
+                for cls in LABELS:
+                    if cls in classes:
+                        found[(pool, cls)] = classes[cls]
+            if len(found) == 4:
+                return found
+        if depth < max_depth:
+            frontier = [c for d in frontier for c in sorted(d.iterdir()) if c.is_dir()]
     raise FileNotFoundError(
         f"Could not find train/{{REAL,FAKE}} and test/{{REAL,FAKE}} under {raw_dir} "
         f"(searched {max_depth} levels deep). Check how the zip unpacked."

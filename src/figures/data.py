@@ -6,6 +6,7 @@ Every number in a figure should come through these helpers, so it traces back to
 from __future__ import annotations
 
 import json
+from functools import lru_cache
 from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,10 +40,10 @@ def history(run: str) -> list[dict]:
     return load_json(f"{run}_history.json")["epochs"]
 
 
-#In order to graphically visualize the failure cases, i have to change failure_cases so it can accept split
-def failure_cases(run: str, corrupt: str = "blur", split: str = "val") -> dict:
-    """Selected examples from src.failure_cases: {"counts": ..., "groups": {name: [{"path", ...}]}}."""
-    return load_json(f"failure_cases_{run}_{split}_{corrupt}.json")
+def failure_cases(run: str, corrupt: str = "blur") -> dict:
+    """Selected examples from src.failure_cases: {"counts": ..., "groups": {name: [{"path", ...}]}}.
+    Failure cases are selected from VALIDATION images only (never test), so there is no split argument."""
+    return load_json(f"failure_cases_{run}_{corrupt}.json")
 
 
 def gradcam(corrupt: str = "blur", target: str = "fake") -> dict:
@@ -54,9 +55,14 @@ def gradcam(corrupt: str = "blur", target: str = "fake") -> dict:
         return {k: arrays[k] for k in arrays.files}
 
 
+@lru_cache(maxsize=1)
+def _dataset_root() -> Path:
+    return data_root(repo_path(load_config()["data"]["raw_dir"]))
+
+
 def image_path(rel_path: str) -> Path:
     """Absolute path of a dataset image from a split file or a failure_cases record."""
-    return data_root(repo_path(load_config()["data"]["raw_dir"])) / rel_path
+    return _dataset_root() / rel_path
 
 
 def figure_path(name: str) -> Path:
